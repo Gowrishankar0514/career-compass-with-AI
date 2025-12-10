@@ -20,21 +20,16 @@ export default function Resume() {
 
       const res = await analyzeResume({
         resumeText: extractedText,
-        jdText: jdText,
+        jdText,
       });
 
       console.log(res.data);
 
       // Parse ai JSON if it's a string
       let aiData = res.data.aiSummary;
-      if (typeof aiData === "string") {
-        aiData = JSON.parse(aiData);
-      }
+      if (typeof aiData === "string") aiData = JSON.parse(aiData);
 
-      setResult({
-        ...res.data,
-        ai: aiData,
-      });
+      setResult({ ...res.data, ai: aiData });
 
     } catch (err) {
       console.error(err);
@@ -72,20 +67,21 @@ export default function Resume() {
         </button>
       </div>
 
-      {/* Results Section */}
+      {/* Result Section */}
       {result && (
         <div style={styles.resultBox}>
-          <h2 style={styles.sectionTitle}>AI Resume Analysis Results</h2>
 
-          {/* ATS Score */}
-          <div style={styles.scoreBox}>
-            <h3 style={styles.scoreLabel}>ATS Score</h3>
-            <p style={styles.scoreValue}>{result.atsScore}%</p>
+          <h2 style={styles.sectionTitle}>AI Resume Analysis</h2>
+
+          {/* ATS SCORE */}
+          <div style={styles.statCard}>
+            <h3 style={styles.statLabel}>ATS Score</h3>
+            <p style={styles.statValue}>{result.atsScore}%</p>
           </div>
 
-          {/* Found Skills */}
+          {/* FOUND SKILLS */}
           <div style={styles.subCard}>
-            <h3 style={styles.subTitle}>Skills Detected in Resume</h3>
+            <h3 style={styles.subTitle}>Skills Detected</h3>
             <p style={styles.text}>
               {result.foundSkills?.length
                 ? result.foundSkills.join(", ")
@@ -93,10 +89,10 @@ export default function Resume() {
             </p>
           </div>
 
-          {/* Missing Skills */}
+          {/* MISSING SKILLS */}
           <div style={styles.subCard}>
-            <h3 style={{ ...styles.subTitle, color: "#ff6b6b" }}>
-              Missing Skills (Based on JD)
+            <h3 style={{ ...styles.subTitle, color: "#ff5f5f" }}>
+              Missing Skills
             </h3>
             <p style={styles.text}>
               {result.missingSkills?.length
@@ -105,13 +101,13 @@ export default function Resume() {
             </p>
           </div>
 
-          {/* ------------------- AI SECTION ------------------- */}
-
+          {/* AI Summary */}
           <div style={styles.subCard}>
             <h3 style={styles.subTitle}>AI Summary</h3>
             <p style={styles.text}>{result.ai?.summary}</p>
           </div>
 
+          {/* Strong Skills */}
           <div style={styles.subCard}>
             <h3 style={styles.subTitle}>Strong Skills 💪</h3>
             <ul>
@@ -121,6 +117,7 @@ export default function Resume() {
             </ul>
           </div>
 
+          {/* Missing Skills AI */}
           <div style={styles.subCard}>
             <h3 style={styles.subTitle}>Missing Skills (AI) ⚠</h3>
             <ul>
@@ -130,6 +127,7 @@ export default function Resume() {
             </ul>
           </div>
 
+          {/* Weak Areas */}
           <div style={styles.subCard}>
             <h3 style={styles.subTitle}>Weak Areas ⚠</h3>
             <ul>
@@ -139,11 +137,13 @@ export default function Resume() {
             </ul>
           </div>
 
+          {/* Skill Gap Analysis */}
           <div style={styles.subCard}>
             <h3 style={styles.subTitle}>Skill Gap Analysis 🧠</h3>
             <p style={styles.text}>{result.ai?.skillGapAnalysis}</p>
           </div>
 
+          {/* Recommended Skills */}
           <div style={styles.subCard}>
             <h3 style={styles.subTitle}>Recommended Skills 🎯</h3>
             <ul>
@@ -153,11 +153,13 @@ export default function Resume() {
             </ul>
           </div>
 
+          {/* Final Recommendation */}
           <div style={styles.subCard}>
             <h3 style={styles.subTitle}>Final Recommendation 📌</h3>
             <p style={styles.text}>{result.ai?.finalRecommendation}</p>
           </div>
 
+          {/* Resume Tips */}
           <div style={styles.subCard}>
             <h3 style={styles.subTitle}>Resume Improvement Tips ✏️</h3>
             <ul>
@@ -173,9 +175,9 @@ export default function Resume() {
             <p style={styles.text}>{result.ai?.professionalRewrite}</p>
           </div>
 
-          {/* Interview Questions */}
+          {/* Interview Preparation */}
           <div style={styles.subCard}>
-            <h3 style={styles.subTitle}>Interview Prep – Technical Questions 💻</h3>
+            <h3 style={styles.subTitle}>Technical Questions 💻</h3>
             <ul>
               {result.ai?.interviewPrep?.technicalQuestions?.map((q, i) => (
                 <li key={i} style={styles.listItem}>{q}</li>
@@ -184,7 +186,7 @@ export default function Resume() {
           </div>
 
           <div style={styles.subCard}>
-            <h3 style={styles.subTitle}>Interview Prep – HR Questions 👔</h3>
+            <h3 style={styles.subTitle}>HR Questions 👔</h3>
             <ul>
               {result.ai?.interviewPrep?.hrQuestions?.map((q, i) => (
                 <li key={i} style={styles.listItem}>{q}</li>
@@ -192,7 +194,7 @@ export default function Resume() {
             </ul>
           </div>
 
-          {/* Full analysis */}
+          {/* Full report */}
           <div style={styles.subCard}>
             <h3 style={styles.subTitle}>Full Analysis Report 📄</h3>
             <p style={styles.text}>{result.ai?.fullAnalysisReport}</p>
@@ -204,78 +206,122 @@ export default function Resume() {
   );
 }
 
+/* -------------------- MNC LEVEL CLEAN UI STYLES -------------------- */
+
 const styles = {
   page: {
-    background: "#121212",
+    background: "#0f0f15",
     minHeight: "100vh",
     padding: "40px",
     color: "white",
-    fontFamily: "Arial",
+    fontFamily: "Segoe UI, Roboto, Arial",
   },
+
   heading: {
     textAlign: "center",
     fontSize: "32px",
-    fontWeight: "bold",
+    fontWeight: 700,
     marginBottom: "30px",
   },
+
   card: {
-    background: "#1e1e1e",
+    background: "rgba(255, 255, 255, 0.06)",
+    backdropFilter: "blur(12px)",
+    border: "1px solid rgba(255, 255, 255, 0.15)",
     padding: "30px",
-    borderRadius: "10px",
+    borderRadius: "12px",
     marginBottom: "40px",
   },
-  label: { fontSize: "16px", fontWeight: "bold" },
+
+  label: {
+    fontSize: "15px",
+    fontWeight: 600,
+    opacity: 0.9,
+  },
+
   input: {
     width: "100%",
-    padding: "10px",
+    padding: "12px",
     marginTop: "8px",
     marginBottom: "20px",
-    background: "#2b2b2b",
-    color: "white",
+    background: "#1d1d27",
     border: "1px solid #444",
+    color: "white",
+    borderRadius: "6px",
   },
+
   textarea: {
     width: "100%",
-    padding: "10px",
-    background: "#2b2b2b",
-    color: "white",
+    padding: "12px",
+    background: "#1d1d27",
     border: "1px solid #444",
+    color: "white",
+    borderRadius: "6px",
   },
+
   button: {
     width: "100%",
-    padding: "12px",
+    padding: "14px",
     background: "#4caf50",
-    color: "white",
-    fontSize: "16px",
-    cursor: "pointer",
     border: "none",
-    marginTop: "20px",
+    borderRadius: "8px",
+    fontSize: "16px",
+    color: "white",
+    cursor: "pointer",
+    fontWeight: 600,
   },
+
   resultBox: {
-    background: "#1e1e1e",
+    background: "rgba(255, 255, 255, 0.06)",
+    backdropFilter: "blur(12px)",
+    border: "1px solid rgba(255, 255, 255, 0.12)",
     padding: "30px",
-    borderRadius: "10px",
+    borderRadius: "12px",
   },
+
   sectionTitle: {
     fontSize: "26px",
-    fontWeight: "bold",
+    fontWeight: 700,
     marginBottom: "20px",
   },
-  scoreBox: {
-    background: "#222",
-    padding: "15px",
-    borderRadius: "8px",
+
+  statCard: {
+    background: "#191923",
+    padding: "16px",
+    borderRadius: "10px",
     marginBottom: "20px",
   },
-  scoreLabel: { fontSize: "18px", opacity: 0.8 },
-  scoreValue: { fontSize: "28px", fontWeight: "bold" },
+
+  statLabel: {
+    fontSize: "16px",
+    opacity: 0.7,
+  },
+
+  statValue: {
+    fontSize: "30px",
+    fontWeight: 700,
+  },
+
   subCard: {
-    background: "#252525",
-    padding: "20px",
-    borderRadius: "8px",
+    background: "#1b1b25",
+    padding: "18px",
+    borderRadius: "10px",
     marginBottom: "20px",
   },
-  subTitle: { fontSize: "20px", marginBottom: "10px" },
-  text: { opacity: 0.8, lineHeight: "1.5" },
-  listItem: { marginBottom: "5px", opacity: 0.9 },
+
+  subTitle: {
+    fontSize: "20px",
+    fontWeight: 600,
+    marginBottom: "10px",
+  },
+
+  text: {
+    opacity: 0.85,
+    lineHeight: "1.6",
+  },
+
+  listItem: {
+    opacity: 0.9,
+    marginBottom: "6px",
+  },
 };

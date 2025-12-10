@@ -27,12 +27,9 @@ export const analyzeResume = async (req, res) => {
     const resume = resumeText.toLowerCase();
     const jd = jdText.toLowerCase();
 
-    console.log('📄 Resume text length:', resume.length);
-    console.log('📄 JD text length:', jd.length);
-
-    // --------------------------------------------------------
-    // SIMPLE ATS SKILL MATCH ENGINE
-    // --------------------------------------------------------
+    // --------------------------
+    // SKILL MATCH ENGINE
+    // --------------------------
     const skillBank = [
       'java',
       'javascript',
@@ -63,115 +60,93 @@ export const analyzeResume = async (req, res) => {
       (skill) => !foundSkills.includes(skill)
     );
 
+    // --------------------------
+    // UPDATED ATS ALGORITHM
+    // --------------------------
+    const matchedSkills = jdSkills.filter((skill) =>
+      foundSkills.includes(skill)
+    );
+
     let atsScore = 0;
 
     if (jdSkills.length > 0) {
-      atsScore = Math.round(
-        ((jdSkills.length - missingSkills.length) / jdSkills.length) * 100
-      );
+      atsScore = Math.round((matchedSkills.length / jdSkills.length) * 100);
+    } else {
+      // If JD has no known skills, compute score based on resume richness
+      atsScore = Math.round((foundSkills.length / skillBank.length) * 100);
     }
 
-    // --------------------------------------------------------
-    // AI ANALYSIS USING GROQ
-    // --------------------------------------------------------
-    let aiSummary = 'AI summary unavailable';
+    console.log('jdSkills:', jdSkills);
+    console.log('matchedSkills:', matchedSkills);
+    console.log('missingSkills:', missingSkills);
+    console.log('atsScore:', atsScore);
+
+    // --------------------------
+    // AI RESPONSE (NO SKILLS, NO ATS)
+    // --------------------------
+    let aiResult = {
+      summary: 'AI Summary unavailable',
+      improvements: [],
+      recommendedSkills: [],
+    };
 
     try {
-      const prompt = `
-You are an ATS + Resume Analysis AI.
+      const prompt = `You are an ATS Resume Analysis Engine.
 
-Here is PRE-CALCULATED ATS DATA from my system.  
-You MUST use this data in the final JSON output:
-
-ATS Score: ${atsScore}
-Detected Skills: ${JSON.stringify(foundSkills)}
-Missing Skills: ${JSON.stringify(missingSkills)}
-
--------------------------
-RESUME TEXT:
-${resume}
-
-JOB DESCRIPTION:
-${jd}
--------------------------
-
-Using ALL information above, return ONLY a valid JSON.
+Generate the following fields only:
 
 {
   "atsScore": number,
-  "detectedSkills": ["string"],
-  "missingSkills": ["string"],
-
-  "summary": "string",
-  "strongSkills": ["string"],
-  "weakAreas": ["string"],
-  "skillGapAnalysis": "string",
-  "recommendedSkills": ["string"],
-  "finalRecommendation": "string",
-  "resumeTips": ["string"],
-
-  "professionalRewrite": "string",
-
-  "interviewPrep": {
-    "technicalQuestions": ["string"],
-    "hrQuestions": ["string"]
-  },
-
-  "fullAnalysisReport": "string"
+  "foundSkills": [string],
+  "missingSkills": [string],
+  "summary": string,
+  "improvements": [string],
+  "recommendedSkills": [string]
 }
 
-RULES:
-- ALWAYS use the ATS score I provided (${atsScore}) — do NOT invent a new one.
-- "detectedSkills" MUST match the list: ${JSON.stringify(foundSkills)}
-- "missingSkills" MUST match this list: ${JSON.stringify(missingSkills)}
-- NEVER leave any field empty.
-- NEVER change the JSON structure.
-- NO markdown, NO comments, ONLY valid JSON.
+Use these system values directly:
+ATS Score: ${atsScore}
+Found Skills: ${JSON.stringify(foundSkills)}
+Missing Skills: ${JSON.stringify(missingSkills)}
+
+Do NOT modify ATS, foundSkills, or missingSkills in the output.
+Only generate summary, improvements, and recommendedSkills.
+
+Output valid JSON only.
 `;
 
       const completion = await groq.chat.completions.create({
         model: 'llama-3.1-8b-instant',
         messages: [
-          { role: 'system', content: 'You are an ATS + Career Analyst AI.' },
+          { role: 'system', content: 'You return ONLY clean JSON.' },
           { role: 'user', content: prompt },
         ],
         temperature: 0.4,
       });
 
-      aiSummary = completion.choices[0]?.message?.content || aiSummary;
+      let aiText = completion.choices[0]?.message?.content?.trim() || '';
+
+      aiText = aiText
+        .replace(/```json/gi, '')
+        .replace(/```/g, '')
+        .trim();
+
+      aiResult = JSON.parse(aiText);
     } catch (err) {
-      console.log('❌ AI Error:', err.message);
+      console.log('❌ AI/JSON Error:', err.message);
     }
 
-    // --------------------------------------------------------
+    // --------------------------
     // FINAL RESPONSE
-    // --------------------------------------------------------
+    // --------------------------
     return res.json({
       success: true,
       atsScore,
       foundSkills,
       missingSkills,
-
-      strongAreas: foundSkills.length
-        ? foundSkills.join(', ')
-        : 'No strong skills detected',
-
-      weakAreas: missingSkills.length
-        ? missingSkills.join(', ')
-        : 'No missing skills detected',
-
-      recommendedSkills: missingSkills.length
-        ? missingSkills.map((s) => `Learn and practice ${s}`)
-        : ['You match all JD skills!'],
-
-      finalRecommendation:
-        atsScore >= 80
-          ? 'Excellent match! Apply confidently.'
-          : atsScore >= 60
-          ? 'Good match — Improve missing skills.'
-          : 'Low match — Build essential skills before applying.',
-
-      aiSummary, // ⭐ Full AI-generated output
+      summary: aiResult.summary,
+      improvements: aiResult.improvements,
+      recommendedSkills: aiResult.recommendedSkills,
     });
   } catch (err) {
     console.error('🔥 SERVER ERROR:', err);
