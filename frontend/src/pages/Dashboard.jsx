@@ -5,8 +5,10 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const [name, setName] = useState("");
 
+
   useEffect(() => {
     const user = localStorage.getItem("userName") || "User";
+    
     const token = localStorage.getItem("token");
     if (!token) navigate("/login");
     setName(user);

@@ -1,5 +1,5 @@
-import Groq from "groq-sdk";
-import dotenv from "dotenv";
+import Groq from 'groq-sdk';
+import dotenv from 'dotenv';
 
 dotenv.config();
 
@@ -8,7 +8,7 @@ const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
 export const analyzeResume = async (req, res) => {
   try {
-    console.log("📌 /analyze request received");
+    console.log('📌 /analyze request received');
 
     console.log(req.body);
 
@@ -20,39 +20,39 @@ export const analyzeResume = async (req, res) => {
     if (!resumeText || !jdText) {
       return res.status(400).json({
         success: false,
-        msg: "resumeText and jdText are required",
+        msg: 'resumeText and jdText are required',
       });
     }
 
     const resume = resumeText.toLowerCase();
     const jd = jdText.toLowerCase();
 
-    console.log("📄 Resume text length:", resume.length);
-    console.log("📄 JD text length:", jd.length);
+    console.log('📄 Resume text length:', resume.length);
+    console.log('📄 JD text length:', jd.length);
 
     // --------------------------------------------------------
     // SIMPLE ATS SKILL MATCH ENGINE
     // --------------------------------------------------------
     const skillBank = [
-      "java",
-      "javascript",
-      "react",
-      "node",
-      "express",
-      "mongodb",
-      "sql",
-      "python",
-      "html",
-      "css",
-      "git",
-      "github",
-      "aws",
-      "cloud",
-      "machine learning",
-      "deep learning",
-      "api",
-      "rest",
-      "data structures",
+      'java',
+      'javascript',
+      'react',
+      'node',
+      'express',
+      'mongodb',
+      'sql',
+      'python',
+      'html',
+      'css',
+      'git',
+      'github',
+      'aws',
+      'cloud',
+      'machine learning',
+      'deep learning',
+      'api',
+      'rest',
+      'data structures',
     ];
 
     const foundSkills = skillBank.filter((skill) => resume.includes(skill));
@@ -74,30 +74,36 @@ export const analyzeResume = async (req, res) => {
     // --------------------------------------------------------
     // AI ANALYSIS USING GROQ
     // --------------------------------------------------------
-    let aiSummary = "AI summary unavailable";
+    let aiSummary = 'AI summary unavailable';
 
     try {
-const prompt = `
+      const prompt = `
 You are an ATS + Resume Analysis AI.
 
-Analyze the following resume and job description and return ONLY a valid JSON object. 
-No markdown. No text outside JSON. No comments. No explanations.
+Here is PRE-CALCULATED ATS DATA from my system.  
+You MUST use this data in the final JSON output:
+
+ATS Score: ${atsScore}
+Detected Skills: ${JSON.stringify(foundSkills)}
+Missing Skills: ${JSON.stringify(missingSkills)}
 
 -------------------------
-RESUME:
+RESUME TEXT:
 ${resume}
 
 JOB DESCRIPTION:
 ${jd}
 -------------------------
 
-Return JSON with EXACTLY the following fields. 
-Every field MUST exist and MUST be filled with meaningful content. NEVER leave empty.
+Using ALL information above, return ONLY a valid JSON.
 
 {
-  "summary": "string", 
-  "strongSkills": ["string"],
+  "atsScore": number,
+  "detectedSkills": ["string"],
   "missingSkills": ["string"],
+
+  "summary": "string",
+  "strongSkills": ["string"],
   "weakAreas": ["string"],
   "skillGapAnalysis": "string",
   "recommendedSkills": ["string"],
@@ -107,43 +113,34 @@ Every field MUST exist and MUST be filled with meaningful content. NEVER leave e
   "professionalRewrite": "string",
 
   "interviewPrep": {
-      "technicalQuestions": ["string"],
-      "hrQuestions": ["string"]
+    "technicalQuestions": ["string"],
+    "hrQuestions": ["string"]
   },
 
   "fullAnalysisReport": "string"
 }
 
-DETAILED REQUIREMENTS:
-- summary → 4–6 lines summarizing resume vs JD match.
-- strongSkills → list 5–10 strong skills based on resume.
-- missingSkills → list all missing JD skills (never empty, add suggestions if needed).
-- weakAreas → 5–10 weak areas based on resume.
-- skillGapAnalysis → detailed explanation (1–2 paragraphs).
-- recommendedSkills → 5–10 skills to learn.
-- finalRecommendation → 3–5 sentences.
-- resumeTips → at least 5 resume improvement tips.
-- professionalRewrite → rewrite professional summary in 4–5 lines.
-- interviewPrep.technicalQuestions → ALWAYS 5 questions.
-- interviewPrep.hrQuestions → ALWAYS 3 questions.
-- fullAnalysisReport → long, full, detailed ATS-style analysis (2–4 paragraphs).
-
-Always return complete JSON, with ALL fields filled.
+RULES:
+- ALWAYS use the ATS score I provided (${atsScore}) — do NOT invent a new one.
+- "detectedSkills" MUST match the list: ${JSON.stringify(foundSkills)}
+- "missingSkills" MUST match this list: ${JSON.stringify(missingSkills)}
+- NEVER leave any field empty.
+- NEVER change the JSON structure.
+- NO markdown, NO comments, ONLY valid JSON.
 `;
 
-
       const completion = await groq.chat.completions.create({
-        model: "llama-3.1-8b-instant",
+        model: 'llama-3.1-8b-instant',
         messages: [
-          { role: "system", content: "You are an ATS + Career Analyst AI." },
-          { role: "user", content: prompt },
+          { role: 'system', content: 'You are an ATS + Career Analyst AI.' },
+          { role: 'user', content: prompt },
         ],
         temperature: 0.4,
       });
 
       aiSummary = completion.choices[0]?.message?.content || aiSummary;
     } catch (err) {
-      console.log("❌ AI Error:", err.message);
+      console.log('❌ AI Error:', err.message);
     }
 
     // --------------------------------------------------------
@@ -156,31 +153,31 @@ Always return complete JSON, with ALL fields filled.
       missingSkills,
 
       strongAreas: foundSkills.length
-        ? foundSkills.join(", ")
-        : "No strong skills detected",
+        ? foundSkills.join(', ')
+        : 'No strong skills detected',
 
       weakAreas: missingSkills.length
-        ? missingSkills.join(", ")
-        : "No missing skills detected",
+        ? missingSkills.join(', ')
+        : 'No missing skills detected',
 
       recommendedSkills: missingSkills.length
         ? missingSkills.map((s) => `Learn and practice ${s}`)
-        : ["You match all JD skills!"],
+        : ['You match all JD skills!'],
 
       finalRecommendation:
         atsScore >= 80
-          ? "Excellent match! Apply confidently."
+          ? 'Excellent match! Apply confidently.'
           : atsScore >= 60
-          ? "Good match — Improve missing skills."
-          : "Low match — Build essential skills before applying.",
+          ? 'Good match — Improve missing skills.'
+          : 'Low match — Build essential skills before applying.',
 
       aiSummary, // ⭐ Full AI-generated output
     });
   } catch (err) {
-    console.error("🔥 SERVER ERROR:", err);
+    console.error('🔥 SERVER ERROR:', err);
     return res.status(500).json({
       success: false,
-      msg: "Internal Server Error",
+      msg: 'Internal Server Error',
       error: err.message,
     });
   }
