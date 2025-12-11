@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { analyzeResume } from "../api";
 import { extractTextFromPDF } from "../utils/pdfReader";
+import { useNavigate } from "react-router-dom";
 
 export default function Resume() {
   const [file, setFile] = useState(null);
@@ -8,11 +9,10 @@ export default function Resume() {
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
 
+  const navigate = useNavigate();
+
   const handleAnalyze = async () => {
-    if (!file) {
-      alert("Please upload your resume!");
-      return;
-    }
+    if (!file) return;
 
     setLoading(true);
     try {
@@ -23,17 +23,13 @@ export default function Resume() {
         jdText,
       });
 
-      console.log(res.data);
+      // Save analysis to Final Review Page
+      localStorage.setItem("analysisData", JSON.stringify(res.data));
 
-      // Parse ai JSON if it's a string
-      let aiData = res.data.aiSummary;
-      if (typeof aiData === "string") aiData = JSON.parse(aiData);
-
-      setResult({ ...res.data, ai: aiData });
-
+      // Redirect to Final Review page
+      navigate("/analysis-result");
     } catch (err) {
-      console.error(err);
-      alert("Error analyzing resume ❌");
+      console.error("Error analyzing resume: ", err);
     }
 
     setLoading(false);
@@ -41,11 +37,13 @@ export default function Resume() {
 
   return (
     <div style={styles.page}>
-      <h1 style={styles.heading}>Resume Analyzer ⚡</h1>
+      <h1 style={styles.heading}>📄 Resume Analyzer</h1>
 
       {/* Upload + JD Section */}
       <div style={styles.card}>
-        <label style={styles.label}>Upload Resume (PDF Only)</label>
+
+        {/* Upload Resume */}
+        <label style={styles.label}>📁 Upload Resume (PDF)</label>
         <input
           type="file"
           accept="application/pdf"
@@ -53,17 +51,19 @@ export default function Resume() {
           onChange={(e) => setFile(e.target.files[0])}
         />
 
-        <label style={styles.label}>Paste Job Description</label>
+        {/* Job Description */}
+        <label style={styles.label}>📝 Paste Job Description</label>
         <textarea
           rows={6}
           style={styles.textarea}
-          placeholder="Paste JD here for AI comparison..."
+          placeholder="Paste the Job Description here..."
           value={jdText}
           onChange={(e) => setJdText(e.target.value)}
         />
 
+        {/* Analyze Button */}
         <button style={styles.button} onClick={handleAnalyze}>
-          {loading ? "Analyzing..." : "Analyze Resume"}
+          {loading ? "⏳ Analyzing..." : "🚀 Analyze Resume"}
         </button>
       </div>
 
@@ -206,122 +206,80 @@ export default function Resume() {
   );
 }
 
-/* -------------------- MNC LEVEL CLEAN UI STYLES -------------------- */
+/* -------------------- Updated Bright UI Styles -------------------- */
 
 const styles = {
   page: {
     background: "#0f0f15",
     minHeight: "100vh",
-    padding: "40px",
+    background: "linear-gradient(135deg, #FF00D4, #00E0FF)",
+    display: "flex",
+    flexDirection: "column",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 30,
     color: "white",
     fontFamily: "Segoe UI, Roboto, Arial",
   },
 
   heading: {
-    textAlign: "center",
-    fontSize: "32px",
-    fontWeight: 700,
-    marginBottom: "30px",
+    fontSize: 38,
+    fontWeight: 800,
+    marginBottom: 25,
   },
 
   card: {
-    background: "rgba(255, 255, 255, 0.06)",
+    background: "rgba(255,255,255,0.18)",
     backdropFilter: "blur(12px)",
-    border: "1px solid rgba(255, 255, 255, 0.15)",
-    padding: "30px",
-    borderRadius: "12px",
-    marginBottom: "40px",
+    padding: 30,
+    borderRadius: 18,
+    width: "450px",
+    boxShadow: "0 10px 25px rgba(0,0,0,0.25)",
   },
 
   label: {
-    fontSize: "15px",
-    fontWeight: 600,
-    opacity: 0.9,
+    fontSize: 16,
+    fontWeight: "bold",
+    marginBottom: 8,
+    display: "block",
   },
 
   input: {
     width: "100%",
-    padding: "12px",
-    marginTop: "8px",
-    marginBottom: "20px",
-    background: "#1d1d27",
-    border: "1px solid #444",
+    padding: 12,
+    marginBottom: 20,
+    background: "rgba(255,255,255,0.25)",
+    border: "none",
     color: "white",
-    borderRadius: "6px",
+    borderRadius: 8,
+    outline: "none",
+    fontSize: 14,
   },
 
   textarea: {
     width: "100%",
-    padding: "12px",
-    background: "#1d1d27",
-    border: "1px solid #444",
+    padding: 12,
+    borderRadius: 8,
+    background: "rgba(255,255,255,0.25)",
+    border: "none",
     color: "white",
-    borderRadius: "6px",
+    marginBottom: 20,
+    minHeight: "120px",
+    fontSize: 14,
+    outline: "none",
   },
 
   button: {
     width: "100%",
-    padding: "14px",
-    background: "#4caf50",
+    padding: 15,
+    background: "#00FFA6",
+    color: "black",
     border: "none",
-    borderRadius: "8px",
-    fontSize: "16px",
-    color: "white",
+    borderRadius: 12,
+    fontSize: 18,
+    fontWeight: 700,
     cursor: "pointer",
-    fontWeight: 600,
-  },
-
-  resultBox: {
-    background: "rgba(255, 255, 255, 0.06)",
-    backdropFilter: "blur(12px)",
-    border: "1px solid rgba(255, 255, 255, 0.12)",
-    padding: "30px",
-    borderRadius: "12px",
-  },
-
-  sectionTitle: {
-    fontSize: "26px",
-    fontWeight: 700,
-    marginBottom: "20px",
-  },
-
-  statCard: {
-    background: "#191923",
-    padding: "16px",
-    borderRadius: "10px",
-    marginBottom: "20px",
-  },
-
-  statLabel: {
-    fontSize: "16px",
-    opacity: 0.7,
-  },
-
-  statValue: {
-    fontSize: "30px",
-    fontWeight: 700,
-  },
-
-  subCard: {
-    background: "#1b1b25",
-    padding: "18px",
-    borderRadius: "10px",
-    marginBottom: "20px",
-  },
-
-  subTitle: {
-    fontSize: "20px",
-    fontWeight: 600,
-    marginBottom: "10px",
-  },
-
-  text: {
-    opacity: 0.85,
-    lineHeight: "1.6",
-  },
-
-  listItem: {
-    opacity: 0.9,
-    marginBottom: "6px",
+    marginTop: 10,
+    transition: "0.2s",
   },
 };

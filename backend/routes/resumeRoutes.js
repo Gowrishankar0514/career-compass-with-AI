@@ -5,10 +5,10 @@ import { authMiddleware } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-// 🔥 If you want only logged-in users to use ATS:
+// If you want login required:
 // router.post("/analyze", authMiddleware, analyzeResume);
 
-// 🔥 If you want ATS to work without login:
+// If ATS can be used without login:
 router.post("/analyze", analyzeResume);
 
 export default router;

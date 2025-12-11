@@ -9,71 +9,106 @@ export default function Login() {
   const login = async () => {
     try {
       const res = await loginUser(form);
+
       localStorage.setItem("token", res.data.token);
-      alert("Login Successful ✔");
-      navigate("/dashboard");
+
+      // ❌ No alert
+      // ✅ Silent redirect
+      navigate("/resume-analysis");
     } catch {
-      alert("Login Failed ❌");
+      // ❌ No alert
+      // Optionally stay on page or redirect
+      navigate("/login");
     }
   };
 
   return (
     <div style={styles.page}>
-      <h2 style={styles.heading}>Login</h2>
+      <h2 style={styles.heading}>🔐 Login to Career Compass</h2>
 
       <div style={styles.card}>
         <input
-          placeholder="Email"
+          placeholder="✉️ Email"
           style={styles.input}
           onChange={(e) => setForm({ ...form, email: e.target.value })}
         />
 
         <input
-          placeholder="Password"
+          placeholder="🔑 Password"
           type="password"
           style={styles.input}
           onChange={(e) => setForm({ ...form, password: e.target.value })}
         />
 
         <button style={styles.button} onClick={login}>
-          Login
+          🚀 Login
         </button>
       </div>
 
       <p style={styles.link} onClick={() => navigate("/register")}>
-        Create an account →
+        ➕ Create an account
       </p>
     </div>
   );
 }
 
 const styles = {
-  page: { padding: 40, textAlign: "center", color: "white" },
-  heading: { fontSize: 28, marginBottom: 20 },
-  card: {
-    background: "#1e1e1e",
-    padding: 30,
-    borderRadius: 10,
-    width: "350px",
-    margin: "auto",
+  page: {
+    minHeight: "100vh",
+    background: "linear-gradient(135deg, #FF00D4, #00E0FF)",
+    display: "flex",
+    flexDirection: "column",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+    color: "white",
   },
+
+  heading: {
+    fontSize: 32,
+    marginBottom: 20,
+    fontWeight: 700,
+  },
+
+  card: {
+    background: "rgba(255, 255, 255, 0.18)",
+    padding: 30,
+    borderRadius: 15,
+    backdropFilter: "blur(10px)",
+    width: "350px",
+    boxShadow: "0 8px 20px rgba(0,0,0,0.25)",
+  },
+
   input: {
     width: "100%",
-    padding: 12,
+    padding: 14,
     marginBottom: 15,
-    background: "#2b2b2b",
+    background: "rgba(255,255,255,0.25)",
+    border: "none",
     color: "white",
-    border: "1px solid #444",
-    borderRadius: 5,
+    borderRadius: 8,
+    fontSize: 15,
+    outline: "none",
   },
+
   button: {
     width: "100%",
-    padding: 12,
-    background: "#4caf50",
-    color: "white",
+    padding: 14,
+    background: "#00FFA6",
+    color: "black",
+    fontSize: 18,
+    fontWeight: "bold",
     border: "none",
+    borderRadius: 10,
     cursor: "pointer",
-    borderRadius: 5,
+    marginTop: 10,
+  },
+
+  link: {
+    marginTop: 20,
+    cursor: "pointer",
+    opacity: 0.9,
+    fontSize: 16,
   },
   link: { marginTop: 20, cursor: "pointer", opacity: 0.7 },
 };
