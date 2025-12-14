@@ -3,54 +3,76 @@ import { registerUser } from "../api";
 import { useNavigate } from "react-router-dom";
 
 export default function Register() {
-  const [form, setForm] = useState({ name: "", email: "", password: "" });
+  const [form, setForm] = useState({
+    name: "",
+    email: "",
+    password: "",
+  });
+
   const navigate = useNavigate();
 
   const handleRegister = async () => {
     try {
       await registerUser(form);
-      localStorage.setItem("userName", form.name);
 
-      // ❌ No alert
-      // ✅ Silent redirect
+      // clear data after success
+      setForm({ name: "", email: "", password: "" });
+
       navigate("/login");
-    } catch {
-      // ❌ No alert
-      navigate("/login");
+    } catch (err) {
+      alert(err.response?.data?.msg || "Registration failed");
+
+      // clear password if error
+      setForm({ ...form, password: "" });
     }
   };
 
   return (
     <div style={styles.page}>
-      <h2 style={styles.heading}>✨ Create Your Account</h2>
+      <h1 style={styles.brand}>CAREERSYNC AI</h1>
+      <p style={styles.subtitle}>Create your account</p>
 
       <div style={styles.card}>
         <input
-          placeholder="👤 Full Name"
+          type="text"
+          placeholder="Full Name"
+          value={form.name}
+          autoComplete="off"
           style={styles.input}
-          onChange={(e) => setForm({ ...form, name: e.target.value })}
+          onChange={(e) =>
+            setForm({ ...form, name: e.target.value })
+          }
         />
 
         <input
-          placeholder="✉️ Email Address"
+          type="email"
+          placeholder="Email Address"
+          value={form.email}
+          autoComplete="new-email"
           style={styles.input}
-          onChange={(e) => setForm({ ...form, email: e.target.value })}
+          onChange={(e) =>
+            setForm({ ...form, email: e.target.value })
+          }
         />
 
         <input
-          placeholder="🔑 Password"
           type="password"
+          placeholder="Password"
+          value={form.password}
+          autoComplete="new-password"
           style={styles.input}
-          onChange={(e) => setForm({ ...form, password: e.target.value })}
+          onChange={(e) =>
+            setForm({ ...form, password: e.target.value })
+          }
         />
 
         <button style={styles.button} onClick={handleRegister}>
-          🚀 Register
+          Register
         </button>
       </div>
 
       <p style={styles.link} onClick={() => navigate("/login")}>
-        Already have an account? <b>Login →</b>
+        Already have an account? <b>Login</b>
       </p>
     </div>
   );
@@ -59,61 +81,65 @@ export default function Register() {
 const styles = {
   page: {
     minHeight: "100vh",
-    background: "linear-gradient(135deg, #FF00D4, #00E0FF)",
+    background: "linear-gradient(135deg, #0A1A2F, #004E92)",
     display: "flex",
     flexDirection: "column",
     justifyContent: "center",
     alignItems: "center",
-    padding: 20,
-    color: "white",
+    color: "#E6F0F8",
+    fontFamily: "Segoe UI, Roboto, Arial",
   },
 
-  heading: {
-    fontSize: 32,
-    fontWeight: "bold",
-    marginBottom: 20,
+  brand: {
+    fontSize: 40,
+    fontWeight: 800,
+    color: "#00FFFF",
+    marginBottom: 6,
+  },
+
+  subtitle: {
+    marginBottom: 25,
+    color: "#D0D0D0",
   },
 
   card: {
-    background: "rgba(255,255,255,0.20)",
-    backdropFilter: "blur(10px)",
+    background: "#000408",
     padding: 30,
-    borderRadius: 15,
-    width: "350px",
-    boxShadow: "0 8px 20px rgba(0,0,0,0.25)",
+    width: 360,
+    borderRadius: 16,
+    border: "2px solid #00FFFF",
+    boxShadow: "0 0 30px rgba(0,255,255,0.4)",
   },
 
   input: {
     width: "100%",
-    padding: 14,
-    marginBottom: 15,
-    background: "rgba(255,255,255,0.25)",
-    border: "none",
-    color: "white",
-    borderRadius: 8,
-    fontSize: 15,
+    boxSizing: "border-box",
+    padding: "14px 16px",
+    marginBottom: 16,
+    background: "#000408",
+    border: "1px solid rgba(0,255,255,0.4)",
+    borderRadius: 12,
+    color: "#E6F0F8",
+    fontSize: 16,
     outline: "none",
   },
 
   button: {
     width: "100%",
-    padding: 14,
-    background: "#00FFA6",
-    color: "black",
+    padding: 16,
+    background: "#00FFFF",
+    color: "#000408",
     fontSize: 18,
-    fontWeight: "bold",
+    fontWeight: 700,
     border: "none",
-    borderRadius: 10,
+    borderRadius: 12,
     cursor: "pointer",
-    marginTop: 10,
-    transition: "0.2s",
+    boxShadow: "0 0 18px rgba(0,255,255,0.6)",
   },
 
   link: {
     marginTop: 20,
+    color: "#00FFFF",
     cursor: "pointer",
-    fontSize: 16,
-    opacity: 0.9,
   },
-  link: { marginTop: 20, cursor: "pointer", opacity: 0.7 },
 };

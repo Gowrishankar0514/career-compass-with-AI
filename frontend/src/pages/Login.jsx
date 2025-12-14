@@ -1,114 +1,158 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { loginUser } from "../api";
 import { useNavigate } from "react-router-dom";
 
 export default function Login() {
-  const [form, setForm] = useState({ email: "", password: "" });
+  const [form, setForm] = useState({
+    email: "",
+    password: "",
+  });
+
   const navigate = useNavigate();
 
-  const login = async () => {
+  // Clear any autofilled values on mount
+  useEffect(() => {
+    setForm({ email: "", password: "" });
+  }, []);
+
+  const handleLogin = async () => {
     try {
       const res = await loginUser(form);
 
       localStorage.setItem("token", res.data.token);
+      localStorage.setItem("userName", res.data.name || "");
 
-      // ❌ No alert
-      // ✅ Silent redirect
+      setForm({ email: "", password: "" });
       navigate("/resume-analysis");
     } catch {
-      // ❌ No alert
-      // Optionally stay on page or redirect
-      navigate("/login");
+      alert("Invalid email or password");
+      setForm({ ...form, password: "" });
     }
   };
 
   return (
     <div style={styles.page}>
-      <h2 style={styles.heading}>🔐 Login to Career Compass</h2>
+      <h1 style={styles.brand}>CAREERSYNC AI</h1>
+      <p style={styles.subtitle}>Welcome back</p>
 
       <div style={styles.card}>
+        {/* 🔒 Autofill Trap Inputs */}
         <input
-          placeholder="✉️ Email"
-          style={styles.input}
-          onChange={(e) => setForm({ ...form, email: e.target.value })}
+          type="text"
+          name="username_fake"
+          autoComplete="username"
+          style={{ display: "none" }}
         />
-
         <input
-          placeholder="🔑 Password"
           type="password"
-          style={styles.input}
-          onChange={(e) => setForm({ ...form, password: e.target.value })}
+          name="password_fake"
+          autoComplete="new-password"
+          style={{ display: "none" }}
         />
 
-        <button style={styles.button} onClick={login}>
-          🚀 Login
+        {/* REAL INPUTS */}
+        <input
+          type="email"
+          name="login_email_unique_987"
+          placeholder="Email Address"
+          value={form.email}
+          autoComplete="off"
+          style={styles.input}
+          onChange={(e) =>
+            setForm({ ...form, email: e.target.value })
+          }
+        />
+
+        <input
+          type="password"
+          name="login_password_unique_654"
+          placeholder="Password"
+          value={form.password}
+          autoComplete="new-password"
+          style={styles.input}
+          onChange={(e) =>
+            setForm({ ...form, password: e.target.value })
+          }
+        />
+
+        <button style={styles.button} onClick={handleLogin}>
+          Login
         </button>
       </div>
 
       <p style={styles.link} onClick={() => navigate("/register")}>
-        ➕ Create an account
+        Don’t have an account? <b>Register</b>
       </p>
     </div>
   );
 }
 
+/* =====================
+   STYLES (NAVY ONLY)
+   ===================== */
+
 const styles = {
   page: {
     minHeight: "100vh",
-    background: "linear-gradient(135deg, #FF00D4, #00E0FF)",
+    background: "linear-gradient(135deg, #0A1A2F, #004E92)",
     display: "flex",
     flexDirection: "column",
     justifyContent: "center",
     alignItems: "center",
-    padding: 20,
-    color: "white",
+    color: "#E6F0F8",
+    fontFamily: "Segoe UI, Roboto, Arial",
   },
 
-  heading: {
-    fontSize: 32,
-    marginBottom: 20,
-    fontWeight: 700,
+  brand: {
+    fontSize: 40,
+    fontWeight: 800,
+    color: "#00FFFF",
+    marginBottom: 6,
+  },
+
+  subtitle: {
+    marginBottom: 25,
+    color: "#D0D0D0",
   },
 
   card: {
-    background: "rgba(255, 255, 255, 0.18)",
+    background: "#000408",
     padding: 30,
-    borderRadius: 15,
-    backdropFilter: "blur(10px)",
-    width: "350px",
-    boxShadow: "0 8px 20px rgba(0,0,0,0.25)",
+    width: 360,
+    borderRadius: 16,
+    border: "2px solid #00FFFF",
+    boxShadow: "0 0 30px rgba(0,255,255,0.4)",
   },
 
   input: {
     width: "100%",
-    padding: 14,
-    marginBottom: 15,
-    background: "rgba(255,255,255,0.25)",
-    border: "none",
-    color: "white",
-    borderRadius: 8,
-    fontSize: 15,
+    boxSizing: "border-box",
+    padding: "14px 16px",
+    marginBottom: 16,
+    background: "#000408", // 🔵 CONSTANT NAVY
+    border: "1px solid rgba(0,255,255,0.4)",
+    borderRadius: 12,
+    color: "#E6F0F8",
+    fontSize: 16,
     outline: "none",
   },
 
   button: {
     width: "100%",
-    padding: 14,
-    background: "#00FFA6",
-    color: "black",
+    padding: 16,
+    background: "#00FFFF",
+    color: "#000408",
     fontSize: 18,
-    fontWeight: "bold",
+    fontWeight: 700,
     border: "none",
-    borderRadius: 10,
+    borderRadius: 12,
     cursor: "pointer",
-    marginTop: 10,
+    boxShadow: "0 0 18px rgba(0,255,255,0.6)",
   },
 
   link: {
     marginTop: 20,
+    color: "#00FFFF",
     cursor: "pointer",
-    opacity: 0.9,
-    fontSize: 16,
   },
-  link: { marginTop: 20, cursor: "pointer", opacity: 0.7 },
 };

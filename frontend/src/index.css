@@ -13,6 +13,23 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Remove forced centering (THIS FIXES ANDROID-LIKE VIEW) */
+body {
+  margin: 0;
+  width: 100%;
+  height: 100vh;
+  min-height: 100vh;
+  display: block;     /* Was flex — REMOVE it */
+  overflow-x: hidden; /* Ensure full width */
+}
+
+/* Optional – full width container for all pages */
+#root {
+  width: 100%;
+  height: 100%;
+}
+
+/* Basic Links */
 a {
   font-weight: 500;
   color: #646cff;
@@ -22,19 +39,12 @@ a:hover {
   color: #535bf2;
 }
 
-body {
-  margin: 0;
-  display: flex;
-  place-items: center;
-  min-width: 320px;
-  min-height: 100vh;
-}
-
 h1 {
   font-size: 3.2em;
   line-height: 1.1;
 }
 
+/* Buttons */
 button {
   border-radius: 8px;
   border: 1px solid transparent;
@@ -46,23 +56,43 @@ button {
   cursor: pointer;
   transition: border-color 0.25s;
 }
+
 button:hover {
   border-color: #646cff;
 }
+
 button:focus,
 button:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
 }
 
+/* Light mode */
 @media (prefers-color-scheme: light) {
   :root {
     color: #213547;
     background-color: #ffffff;
   }
+
   a:hover {
     color: #747bff;
   }
+
   button {
     background-color: #f9f9f9;
   }
+}
+/* ======================================
+   FORCE INPUT BACKGROUND TO NAVY BLUE
+   (FIX CHROME AUTOFILL / FOCUS COLOR)
+   ====================================== */
+
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 1000px #000408 inset !important;
+  box-shadow: 0 0 0 1000px #000408 inset !important;
+  -webkit-text-fill-color: #E6F0F8 !important;
+  caret-color: #E6F0F8 !important;
+  transition: background-color 9999s ease-in-out 0s;
 }

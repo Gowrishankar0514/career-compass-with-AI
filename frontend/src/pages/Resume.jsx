@@ -6,44 +6,52 @@ import { useNavigate } from "react-router-dom";
 export default function Resume() {
   const [file, setFile] = useState(null);
   const [jdText, setJdText] = useState("");
-  const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
 
   const navigate = useNavigate();
 
   const handleAnalyze = async () => {
-    if (!file) return;
+    if (!file || !jdText.trim()) return;
 
     setLoading(true);
     try {
       const extractedText = await extractTextFromPDF(file);
-
       const res = await analyzeResume({
         resumeText: extractedText,
         jdText,
       });
 
-      // Save analysis to Final Review Page
       localStorage.setItem("analysisData", JSON.stringify(res.data));
-
-      // Redirect to Final Review page
       navigate("/analysis-result");
     } catch (err) {
-      console.error("Error analyzing resume: ", err);
+      console.error(err);
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
   return (
     <div style={styles.page}>
-      <h1 style={styles.heading}>📄 Resume Analyzer</h1>
+      {/* ===== BRAND HEADING ===== */}
+      <h1
+        style={styles.brand}
+        onMouseEnter={(e) =>
+          (e.target.style.textShadow = "0 0 30px #00FFFF")
+        }
+        onMouseLeave={(e) =>
+          (e.target.style.textShadow = "none")
+        }
+      >
+        CAREERSYNC AI
+      </h1>
 
-      {/* Upload + JD Section */}
+      <p style={styles.subtitle}>
+        AI-Powered Resume & Job Match Analysis
+      </p>
+
+      {/* ===== MAIN CARD ===== */}
       <div style={styles.card}>
-
-        {/* Upload Resume */}
-        <label style={styles.label}>📁 Upload Resume (PDF)</label>
+        <label style={styles.label}>Upload Resume (PDF)</label>
         <input
           type="file"
           accept="application/pdf"
@@ -51,235 +59,120 @@ export default function Resume() {
           onChange={(e) => setFile(e.target.files[0])}
         />
 
-        {/* Job Description */}
-        <label style={styles.label}>📝 Paste Job Description</label>
+        <label style={styles.label}>Paste Job Description</label>
         <textarea
-          rows={6}
           style={styles.textarea}
           placeholder="Paste the Job Description here..."
           value={jdText}
           onChange={(e) => setJdText(e.target.value)}
         />
 
-        {/* Analyze Button */}
-        <button style={styles.button} onClick={handleAnalyze}>
-          {loading ? "⏳ Analyzing..." : "🚀 Analyze Resume"}
+        <button
+          style={styles.button}
+          onMouseEnter={(e) =>
+            (e.target.style.boxShadow =
+              "0 0 35px rgba(0,255,255,1)")
+          }
+          onMouseLeave={(e) =>
+            (e.target.style.boxShadow =
+              "0 0 22px rgba(0,255,255,0.6)")
+          }
+          onClick={handleAnalyze}
+        >
+          {loading ? "Analyzing..." : "Analyze Resume"}
         </button>
       </div>
-
-      {/* Result Section */}
-      {result && (
-        <div style={styles.resultBox}>
-
-          <h2 style={styles.sectionTitle}>AI Resume Analysis</h2>
-
-          {/* ATS SCORE */}
-          <div style={styles.statCard}>
-            <h3 style={styles.statLabel}>ATS Score</h3>
-            <p style={styles.statValue}>{result.atsScore}%</p>
-          </div>
-
-          {/* FOUND SKILLS */}
-          <div style={styles.subCard}>
-            <h3 style={styles.subTitle}>Skills Detected</h3>
-            <p style={styles.text}>
-              {result.foundSkills?.length
-                ? result.foundSkills.join(", ")
-                : "No matching skills found."}
-            </p>
-          </div>
-
-          {/* MISSING SKILLS */}
-          <div style={styles.subCard}>
-            <h3 style={{ ...styles.subTitle, color: "#ff5f5f" }}>
-              Missing Skills
-            </h3>
-            <p style={styles.text}>
-              {result.missingSkills?.length
-                ? result.missingSkills.join(", ")
-                : "No missing skills 🎉"}
-            </p>
-          </div>
-
-          {/* AI Summary */}
-          <div style={styles.subCard}>
-            <h3 style={styles.subTitle}>AI Summary</h3>
-            <p style={styles.text}>{result.ai?.summary}</p>
-          </div>
-
-          {/* Strong Skills */}
-          <div style={styles.subCard}>
-            <h3 style={styles.subTitle}>Strong Skills 💪</h3>
-            <ul>
-              {result.ai?.strongSkills?.map((s, i) => (
-                <li key={i} style={styles.listItem}>{s}</li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Missing Skills AI */}
-          <div style={styles.subCard}>
-            <h3 style={styles.subTitle}>Missing Skills (AI) ⚠</h3>
-            <ul>
-              {result.ai?.missingSkills?.map((s, i) => (
-                <li key={i} style={styles.listItem}>{s}</li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Weak Areas */}
-          <div style={styles.subCard}>
-            <h3 style={styles.subTitle}>Weak Areas ⚠</h3>
-            <ul>
-              {result.ai?.weakAreas?.map((s, i) => (
-                <li key={i} style={styles.listItem}>{s}</li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Skill Gap Analysis */}
-          <div style={styles.subCard}>
-            <h3 style={styles.subTitle}>Skill Gap Analysis 🧠</h3>
-            <p style={styles.text}>{result.ai?.skillGapAnalysis}</p>
-          </div>
-
-          {/* Recommended Skills */}
-          <div style={styles.subCard}>
-            <h3 style={styles.subTitle}>Recommended Skills 🎯</h3>
-            <ul>
-              {result.ai?.recommendedSkills?.map((s, i) => (
-                <li key={i} style={styles.listItem}>{s}</li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Final Recommendation */}
-          <div style={styles.subCard}>
-            <h3 style={styles.subTitle}>Final Recommendation 📌</h3>
-            <p style={styles.text}>{result.ai?.finalRecommendation}</p>
-          </div>
-
-          {/* Resume Tips */}
-          <div style={styles.subCard}>
-            <h3 style={styles.subTitle}>Resume Improvement Tips ✏️</h3>
-            <ul>
-              {result.ai?.resumeTips?.map((tip, i) => (
-                <li key={i} style={styles.listItem}>{tip}</li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Professional Rewrite */}
-          <div style={styles.subCard}>
-            <h3 style={styles.subTitle}>Professional Summary Rewrite ✍️</h3>
-            <p style={styles.text}>{result.ai?.professionalRewrite}</p>
-          </div>
-
-          {/* Interview Preparation */}
-          <div style={styles.subCard}>
-            <h3 style={styles.subTitle}>Technical Questions 💻</h3>
-            <ul>
-              {result.ai?.interviewPrep?.technicalQuestions?.map((q, i) => (
-                <li key={i} style={styles.listItem}>{q}</li>
-              ))}
-            </ul>
-          </div>
-
-          <div style={styles.subCard}>
-            <h3 style={styles.subTitle}>HR Questions 👔</h3>
-            <ul>
-              {result.ai?.interviewPrep?.hrQuestions?.map((q, i) => (
-                <li key={i} style={styles.listItem}>{q}</li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Full report */}
-          <div style={styles.subCard}>
-            <h3 style={styles.subTitle}>Full Analysis Report 📄</h3>
-            <p style={styles.text}>{result.ai?.fullAnalysisReport}</p>
-          </div>
-
-        </div>
-      )}
     </div>
   );
 }
 
-/* -------------------- Updated Bright UI Styles -------------------- */
+/* =========================
+   FINAL COLOR THEME
+   ========================= */
 
 const styles = {
   page: {
-    background: "#0f0f15",
     minHeight: "100vh",
-    background: "linear-gradient(135deg, #FF00D4, #00E0FF)",
+    background: "linear-gradient(135deg, #0A1A2F, #004E92)", // ✅ BLUE BACKGROUND
     display: "flex",
     flexDirection: "column",
     justifyContent: "center",
     alignItems: "center",
-    padding: 30,
-    color: "white",
+    padding: 40,
+    color: "#E6F0F8",
     fontFamily: "Segoe UI, Roboto, Arial",
   },
 
-  heading: {
-    fontSize: 38,
+  brand: {
+    fontSize: 42,
     fontWeight: 800,
-    marginBottom: 25,
+    letterSpacing: "1.5px",
+    marginBottom: 6,
+    color: "#00FFFF", // ✅ CYAN TEXT
+    transition: "0.3s ease",
+  },
+
+  subtitle: {
+    fontSize: 15,
+    marginBottom: 30,
+    color: "#D0D0D0",
   },
 
   card: {
-    background: "rgba(255,255,255,0.18)",
-    backdropFilter: "blur(12px)",
-    padding: 30,
+    width: "100%",
+    maxWidth: 900,
+    background: "#000408", // ✅ NAVY BOX
+    padding: 32,
     borderRadius: 18,
-    width: "450px",
-    boxShadow: "0 10px 25px rgba(0,0,0,0.25)",
+    border: "2px solid #00FFFF",
+    boxShadow: "0 0 35px rgba(0,255,255,0.45)",
   },
 
   label: {
-    fontSize: 16,
-    fontWeight: "bold",
+    fontSize: 15,
+    fontWeight: 600,
     marginBottom: 8,
     display: "block",
+    color: "#E6F0F8",
   },
 
   input: {
     width: "100%",
-    padding: 12,
+    padding: 14,
     marginBottom: 20,
-    background: "rgba(255,255,255,0.25)",
-    border: "none",
-    color: "white",
+    background: "#000408", // ✅ NAVY INPUT
+    border: "1px solid rgba(0,255,255,0.4)",
     borderRadius: 8,
+    color: "#E6F0F8",
     outline: "none",
     fontSize: 14,
   },
 
   textarea: {
     width: "100%",
-    padding: 12,
+    minHeight: "140px",
+    padding: 14,
+    marginBottom: 22,
+    background: "#000408", // ✅ NAVY TEXTAREA
+    border: "1px solid rgba(0,255,255,0.4)",
     borderRadius: 8,
-    background: "rgba(255,255,255,0.25)",
-    border: "none",
-    color: "white",
-    marginBottom: 20,
-    minHeight: "120px",
+    color: "#E6F0F8",
     fontSize: 14,
     outline: "none",
+    resize: "vertical",
   },
 
   button: {
     width: "100%",
-    padding: 15,
-    background: "#00FFA6",
-    color: "black",
-    border: "none",
-    borderRadius: 12,
+    padding: 16,
+    background: "#00FFFF",
+    color: "#000408",
     fontSize: 18,
     fontWeight: 700,
+    border: "none",
+    borderRadius: 12,
     cursor: "pointer",
-    marginTop: 10,
-    transition: "0.2s",
+    transition: "0.3s ease",
+    boxShadow: "0 0 22px rgba(0,255,255,0.6)",
   },
 };

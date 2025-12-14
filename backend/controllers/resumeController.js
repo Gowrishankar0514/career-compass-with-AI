@@ -3,41 +3,72 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-// Init Groq Client
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+// ----------------------------------------
+// INIT GROQ CLIENT
+// ----------------------------------------
+const groq = process.env.GROQ_API_KEY
+  ? new Groq({ apiKey: process.env.GROQ_API_KEY })
+  : null;
 
-// Utility to normalize text
+// ----------------------------------------
+// UTILITY FUNCTIONS
+// ----------------------------------------
 const normalize = (text = "") =>
-  text
+  String(text)
     .replace(/[\r\n]+/g, " ")
     .replace(/[^\w\s]/g, " ")
     .replace(/\s+/g, " ")
     .trim()
     .toLowerCase();
 
-// More accurate skill matcher
+// Skill matcher (word-boundary aware)
 function skillInText(skill, text) {
   if (!skill || !text) return false;
 
-  const normalized = normalize(text);
+  const n = normalize(text);
   const s = skill.toLowerCase().trim();
 
-  if (normalized.includes(s)) return true;
+  if (n.includes(s)) return true;
 
-  const re = new RegExp(`\\b${s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "i");
-  return re.test(normalized);
+  const safe = s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const re = new RegExp(`\\b${safe}\\b`, "i");
+
+  return re.test(n);
 }
 
+// Extract JSON safely from AI response
+function extractJsonObject(raw) {
+  if (!raw || typeof raw !== "string") return null;
+
+  let text = raw
+    .replace(/```json/gi, "")
+    .replace(/```/g, "")
+    .trim();
+
+  const first = text.indexOf("{");
+  const last = text.lastIndexOf("}");
+
+  if (first === -1 || last === -1 || last <= first) return null;
+
+  const candidate = text.slice(first, last + 1).trim();
+
+  try {
+    return JSON.parse(candidate);
+  } catch {
+    try {
+      return JSON.parse(candidate.replace(/\s+/g, " "));
+    } catch {
+      return null;
+    }
+  }
+}
+
+// ----------------------------------------
+// RESUME ANALYZER CONTROLLER
+// ----------------------------------------
 export const analyzeResume = async (req, res) => {
   try {
-    console.log('📌 /analyze request received');
-
-    console.log(req.body);
-
-    const { resumeText, jdText } = req.body;
-
-    console.log(resumeText);
-    console.log(jdText);
+    const { resumeText, jdText } = req.body ?? {};
 
     if (!resumeText || !jdText) {
       return res.status(400).json({
@@ -46,50 +77,72 @@ export const analyzeResume = async (req, res) => {
       });
     }
 
-    const resume = resumeText.toLowerCase();
-    const jd = jdText.toLowerCase();
-
-    // --------------------------
-    // SKILL MATCH ENGINE
-    // --------------------------
+    // ----------------------------------------
+    // SKILL BANK (EDITABLE)
+    // ----------------------------------------
     const skillBank = [
-      "java","javascript","react","node","express","mongodb","sql",
-      "python","html","css","git","github","aws","cloud",
-      "machine learning","deep learning","api","rest","data structures"
+      "java",
+      "javascript",
+      "react",
+      "node",
+      "express",
+      "mongodb",
+      "sql",
+      "python",
+      "html",
+      "css",
+      "git",
+      "github",
+      "aws",
+      "cloud",
+      "machine learning",
+      "deep learning",
+      "api",
+      "rest",
+      "data structures",
     ];
 
-    // JD SKILLS
+    // Detect skills
     const jdSkills = skillBank.filter((s) => skillInText(s, jdText));
 
     // Resume detected skills
     const resumeSkills = skillBank.filter((s) => skillInText(s, resumeText));
 
-    // Matched & Missing
-    const matchedSkills = jdSkills.filter((s) => resumeSkills.includes(s));
-    const missingSkills = jdSkills.filter((s) => !resumeSkills.includes(s));
+    const matchedSkills = jdSkills.filter((s) =>
+      resumeSkills.includes(s)
+    );
 
-    // ATS SCORE
+    const missingSkills = jdSkills.filter(
+      (s) => !resumeSkills.includes(s)
+    );
+
+    // ----------------------------------------
+    // ATS SCORE CALCULATION
+    // ----------------------------------------
     let atsScore = 0;
 
     if (jdSkills.length > 0) {
-      atsScore = Math.round((matchedSkills.length / jdSkills.length) * 100);
+      atsScore = Math.round(
+        (matchedSkills.length / jdSkills.length) * 100
+      );
     } else {
-      atsScore = Math.round((resumeSkills.length / skillBank.length) * 100);
+      atsScore = Math.round(
+        (resumeSkills.length / skillBank.length) * 100
+      );
     }
 
-    if (atsScore < 0) atsScore = 0;
-    if (atsScore > 100) atsScore = 100;
+    atsScore = Math.max(0, Math.min(100, atsScore));
 
-    // -----------------------------
-    // AI SECTION
-    // -----------------------------
-    let aiOutput = {
-      interviewQuestions: { technical: [], hr: [] },
-      finalReview: "",
-    };
+    // Skill Match Score (0–10)
+    const skillMatchScore =
+      jdSkills.length > 0
+        ? Math.round((matchedSkills.length / jdSkills.length) * 10)
+        : Math.round((resumeSkills.length / skillBank.length) * 10);
 
-    try {
-      const prompt = `
+    // ----------------------------------------
+    // AI PROMPT
+    // ----------------------------------------
+    const aiPrompt = `
 You are an expert technical interviewer and resume analyst.
 
 Use ONLY this data exactly as provided:
@@ -97,86 +150,113 @@ ATS Score: ${atsScore}
 Matched Skills: ${JSON.stringify(matchedSkills)}
 Missing Skills: ${JSON.stringify(missingSkills)}
 
-Resume Text:
+Resume:
 ${resumeText}
 
 Job Description:
 ${jdText}
 
-Return ONLY a valid JSON object with EXACTLY this structure:
-
+Return ONLY valid JSON with EXACT fields:
 {
-  "interviewQuestions": {
-    "technical": ["q1", "q2", "q3", "q4", "q5"],
-    "hr": ["q1", "q2", "q3"]
-  },
-  "finalReview": "3 sentences exactly"
+  "technicalQuestions": ["q1","q2","q3","q4","q5"],
+  "hrQuestions": ["q1","q2","q3"],
+  "recommendations": ["rec1","rec2","rec3"],
+  "finalReview": "Exactly 3 sentences."
 }
-
-RULES:
-- 5 technical questions EXACTLY.
-- 3 HR questions EXACTLY.
-- finalReview MUST be EXACTLY 3 sentences:
-   Sentence 1: Overall match (use ATS Score).
-   Sentence 2: Strengths and matched skills.
-   Sentence 3: Missing skills + improvement advice.
-- NO markdown. NO extra text. NO comments. JSON ONLY.
 `;
 
-      const completion = await groq.chat.completions.create({
-        model: "llama-3.1-8b-instant",
-        messages: [{ role: "user", content: prompt }],
-        temperature: 0.2,
-      });
+    // ----------------------------------------
+    // FALLBACK DATA
+    // ----------------------------------------
+    const fallback = {
+      technicalQuestions: [
+        `Explain how you used ${matchedSkills[0] || "a core skill"} in a project.`,
+        "Describe a difficult bug you fixed.",
+        "How would you design a scalable REST API?",
+        "How do you optimize database queries?",
+        "Explain a performance improvement you implemented.",
+      ],
+      hrQuestions: [
+        "Why are you interested in this role?",
+        "Tell me about a team conflict you resolved.",
+        "What motivates you to learn new skills?",
+      ],
+      recommendations:
+        missingSkills.length > 0
+          ? missingSkills.map((s) => `Learn and practice ${s}`)
+          : [
+              "Highlight measurable project results",
+              "Add cloud or DevOps exposure",
+              "Improve system design knowledge",
+            ],
+      finalReview: `The resume shows an ATS match of ${atsScore}%, indicating a ${
+        atsScore >= 80 ? "strong" : atsScore >= 60 ? "moderate" : "low"
+      } fit. Strengths include ${
+        matchedSkills.length ? matchedSkills.join(", ") : "core fundamentals"
+      }. Missing skills such as ${
+        missingSkills.length ? missingSkills.join(", ") : "none significant"
+      } should be improved.`,
+    };
 
-      let raw = completion?.choices?.[0]?.message?.content || "";
+    // ----------------------------------------
+    // AI CALL (OPTIONAL)
+    // ----------------------------------------
+    let {
+      technicalQuestions,
+      hrQuestions,
+      recommendations,
+      finalReview,
+    } = fallback;
 
-      raw = raw.replace(/```json/gi, "").replace(/```/g, "").trim();
-      const safe = raw.replace(/\n+/g, " ").trim();
+    if (groq) {
+      try {
+        const completion = await groq.chat.completions.create({
+          model: "llama-3.1-8b-instant",
+          messages: [{ role: "user", content: aiPrompt }],
+          temperature: 0.2,
+          max_tokens: 600,
+        });
 
-      const parsed = JSON.parse(safe);
+        const raw =
+          completion?.choices?.[0]?.message?.content || "";
 
-      aiOutput.interviewQuestions = parsed.interviewQuestions;
-      aiOutput.finalReview = parsed.finalReview;
+        const parsed = extractJsonObject(raw);
 
-    } catch (err) {
-      console.log("❌ AI JSON Error:", err.message);
+        if (parsed) {
+          if (Array.isArray(parsed.technicalQuestions))
+            technicalQuestions = parsed.technicalQuestions.slice(0, 5);
 
-      aiOutput.interviewQuestions = {
-        technical: [
-          `Explain ${matchedSkills[0] || "a relevant technology"} in a project.`,
-          "How would you optimize a backend API for high throughput?",
-          "Explain a debugging challenge you solved.",
-          "Describe how you design scalable systems.",
-          "Explain a performance optimization you implemented."
-        ],
-        hr: [
-          "Why are you interested in this role?",
-          "Describe a conflict you resolved in a team.",
-          "What motivates you the most in a work environment?"
-        ]
-      };
+          if (Array.isArray(parsed.hrQuestions))
+            hrQuestions = parsed.hrQuestions.slice(0, 3);
 
-      aiOutput.finalReview =
-        `Your resume has an ATS match score of ${atsScore}%, showing partial alignment with the job description. ` +
-        `You demonstrate strengths in skills such as ${matchedSkills.join(", ") || "core fundamentals"}. ` +
-        `However, missing skills like ${missingSkills.join(", ") || "some important requirements"} may reduce your fit, so improving those areas will strengthen your profile.`;
+          if (Array.isArray(parsed.recommendations))
+            recommendations = parsed.recommendations.slice(0, 6);
+
+          if (typeof parsed.finalReview === "string")
+            finalReview = parsed.finalReview.trim();
+        }
+      } catch (err) {
+        console.log("❌ AI error, using fallback:", err.message);
+      }
     }
 
-    // -----------------------------
-    // FINAL RESPONSE
-    // -----------------------------
+    // ----------------------------------------
+    // RESPONSE
+    // ----------------------------------------
     return res.json({
       success: true,
       atsScore,
+      skillMatchScore,
       matchedSkills,
       missingSkills,
-      interviewQuestions: aiOutput.interviewQuestions,
-      finalReview: aiOutput.finalReview,
+      technicalQuestions,
+      hrQuestions,
+      recommendations,
+      finalReview,
     });
 
   } catch (err) {
-    console.error("🔥 Controller Error:", err);
+    console.error("🔥 Resume Controller Error:", err);
     return res.status(500).json({
       success: false,
       msg: "Internal Server Error",

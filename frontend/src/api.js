@@ -7,7 +7,9 @@ const API = axios.create({
 // Attach token automatically
 API.interceptors.request.use((req) => {
   const token = localStorage.getItem("token");
-  if (token) req.headers.Authorization = `Bearer ${token}`;
+  if (token) {
+    req.headers.Authorization = `Bearer ${token}`;
+  }
   return req;
 });
 
@@ -18,7 +20,9 @@ export const loginUser = (data) => API.post("/auth/login", data);
 // RESUME
 export const analyzeResume = (formData) =>
   API.post("/resumes/analyze", formData, {
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+    },
   });
 
 export default API;

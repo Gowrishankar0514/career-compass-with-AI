@@ -1,44 +1,30 @@
 import React from "react";
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
 
-import Register from "./pages/Register.jsx";
-import Login from "./pages/Login.jsx";
-import Dashboard from "./pages/Dashboard.jsx";
-import Resume from "./pages/Resume.jsx";
-import FinalReview from "./pages/FinalReview.jsx";
+import Landing from "./pages/Landing";
+import Register from "./pages/Register";
+import Login from "./pages/Login";
+import Resume from "./pages/Resume";
+import FinalReview from "./pages/FinalReview";
 
 export default function App() {
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        width: "100%",
-        background: "linear-gradient(135deg, #FF00D4, #00E0FF)",
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        padding: "20px",
-      }}
-    >
-      <div style={{ width: "100%", maxWidth: "900px" }}>
-        <Routes>
+    <div style={{ width: "100%", minHeight: "100vh", overflowX: "hidden" }}>
+      <Routes>
+        {/* Landing Page */}
+        <Route path="/" element={<Landing />} />
 
-          {/* FIRST PAGE → REGISTER */}
-          <Route path="/" element={<Navigate to="/register" />} />
+        {/* Auth Pages */}
+        <Route path="/register" element={<Register />} />
+        <Route path="/login" element={<Login />} />
 
-          {/* AUTH PAGES */}
-          <Route path="/register" element={<Register />} />
-          <Route path="/login" element={<Login />} />
+        {/* Resume Analysis Flow */}
+        <Route path="/resume-analysis" element={<Resume />} />
+        <Route path="/analysis-result" element={<FinalReview />} />
 
-          {/* MAIN PAGES */}
-          <Route path="/resume-analysis" element={<Resume />} />
-          <Route path="/analysis-result" element={<FinalReview />} />
-
-          {/* UNKNOWN → REGISTER */}
-          <Route path="*" element={<Navigate to="/register" />} />
-
-        </Routes>
-      </div>
+        {/* Fallback */}
+        <Route path="*" element={<Landing />} />
+      </Routes>
     </div>
   );
 }
