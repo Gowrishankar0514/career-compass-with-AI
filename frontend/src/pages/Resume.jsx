@@ -3,6 +3,11 @@ import { analyzeResume } from "../api";
 import { extractTextFromPDF } from "../utils/pdfReader";
 import { useNavigate } from "react-router-dom";
 
+/* ===== PIE CHART ===== */
+import { Pie } from "react-chartjs-2";
+import { Chart as ChartJS, ArcElement, Tooltip, Legend } from "chart.js";
+ChartJS.register(ArcElement, Tooltip, Legend);
+
 export default function Resume() {
   const [file, setFile] = useState(null);
   const [jdText, setJdText] = useState("");
@@ -27,6 +32,22 @@ export default function Resume() {
     }
   };
 
+  /* ===== PIE CHART DATA ===== */
+  const skillMatchPercent = result
+    ? Math.round((result.skillMatchScore / 10) * 100)
+    : 0;
+
+  const pieData = {
+    labels: ["Strong Match", "Skill Gap"],
+    datasets: [
+      {
+        data: [skillMatchPercent, 100 - skillMatchPercent],
+        backgroundColor: ["#00FFFF", "#1A2B45"],
+        borderWidth: 0,
+      },
+    ],
+  };
+
   return (
     <div style={styles.page}>
       <h1 style={styles.brand}>CAREERSYNC AI</h1>
@@ -38,49 +59,52 @@ export default function Resume() {
         <input
           type="file"
           accept="application/pdf"
-          style={styles.input}
+          style={styles.field}
           onChange={(e) => setFile(e.target.files[0])}
         />
 
         <label style={styles.label}>Paste Job Description</label>
         <textarea
-          style={styles.textarea}
+          style={styles.fieldTextarea}
           value={jdText}
           onChange={(e) => setJdText(e.target.value)}
           placeholder="Paste job description here..."
         />
 
-        <button
-          style={styles.button}
-          onMouseEnter={(e) =>
-            (e.target.style.boxShadow = "0 0 30px rgba(0,255,255,1)")
-          }
-          onMouseLeave={(e) =>
-            (e.target.style.boxShadow = "0 0 18px rgba(0,255,255,0.6)")
-          }
-          onClick={handleAnalyze}
-        >
+        <button style={styles.button} onClick={handleAnalyze}>
           {loading ? "Analyzing..." : "Analyze Resume"}
         </button>
       </div>
 
-      {/* RESULT */}
+      {/* RESULT SECTION */}
       {result && (
         <div style={styles.resultBox}>
           <h2 style={styles.sectionMain}>Resume Analysis Result</h2>
 
-          <div style={styles.statRow}>
-            <div style={styles.statCard}>
-              <span>ATS Score</span>
-              <strong>{result.atsScore}%</strong>
+          {/* ATS SCORE */}
+          <div style={styles.statRowFull}>
+            <span>ATS Score</span>
+            <strong>{result.atsScore}%</strong>
+          </div>
+
+          {/* STRONG MATCH + PIE (SAME BORDER) */}
+          <div style={styles.strongMatchBox}>
+            <div style={styles.statRowInside}>
+              <span>Strong Match</span>
+              <strong>{result.skillMatchScore}/10</strong>
             </div>
 
-            <div style={styles.statCard}>
-              <span>Skill Match</span>
-              <strong>{result.skillMatchScore}/10</strong>
+            <div style={styles.pieSection}>
+              <h3 style={styles.pieTitle}>
+                Strong Match Skill Distribution
+              </h3>
+              <div style={styles.pieWrapper}>
+                <Pie data={pieData} />
+              </div>
             </div>
           </div>
 
+          {/* CONTENT SECTIONS */}
           <Section title="Matched Skills">
             {result.matchedSkills?.join(", ") || "No matched skills"}
           </Section>
@@ -105,7 +129,10 @@ export default function Resume() {
             </ol>
           </Section>
 
-          <button style={styles.nextButton} onClick={() => navigate("/analysis-result")}>
+          <button
+            style={styles.nextButton}
+            onClick={() => navigate("/analysis-result")}
+          >
             Go to Final Review
           </button>
         </div>
@@ -130,7 +157,7 @@ const Section = ({ title, children, danger }) => (
 );
 
 /* ======================
-   COLOR MATCHED STYLES
+   STYLES
    ====================== */
 const styles = {
   page: {
@@ -146,7 +173,6 @@ const styles = {
     fontSize: 40,
     fontWeight: 800,
     color: "#00FFFF",
-    marginBottom: 6,
   },
 
   subtitle: {
@@ -162,50 +188,49 @@ const styles = {
     background: "#000408",
     border: "2px solid #00FFFF",
     borderRadius: 16,
-    boxShadow: "0 0 30px rgba(0,255,255,0.4)",
   },
 
   label: {
-    fontWeight: 600,
-    marginBottom: 6,
+    width: "90%",
+    margin: "0 auto 6px",
     display: "block",
+    fontWeight: 600,
   },
 
-  input: {
-    width: "100%",
+  field: {
+    width: "90%",
+    margin: "0 auto 16px",
+    display: "block",
     padding: "14px 16px",
-    marginBottom: 16,
     background: "#000408",
     border: "1px solid rgba(0,255,255,0.4)",
     borderRadius: 12,
     color: "#E6F0F8",
-    outline: "none",
   },
 
-  textarea: {
-    width: "100%",
+  fieldTextarea: {
+    width: "90%",
+    margin: "0 auto 20px",
+    display: "block",
     minHeight: 120,
     padding: "14px 16px",
     background: "#000408",
     border: "1px solid rgba(0,255,255,0.4)",
     borderRadius: 12,
     color: "#E6F0F8",
-    marginBottom: 20,
-    outline: "none",
   },
 
   button: {
-    width: "100%",
+    width: "90%",
+    margin: "0 auto",
+    display: "block",
     padding: 16,
     background: "#00FFFF",
     color: "#000408",
-    fontSize: 18,
     fontWeight: 700,
     border: "none",
     borderRadius: 12,
     cursor: "pointer",
-    boxShadow: "0 0 18px rgba(0,255,255,0.6)",
-    transition: "0.3s ease",
   },
 
   resultBox: {
@@ -223,26 +248,59 @@ const styles = {
     marginBottom: 25,
   },
 
-  statRow: {
+  statRowFull: {
     display: "flex",
-    gap: 20,
+    justifyContent: "space-between",
+    padding: "18px 22px",
     marginBottom: 20,
-  },
-
-  statCard: {
-    flex: 1,
-    background: "#000408",
-    padding: 20,
     borderRadius: 12,
     border: "1px solid rgba(0,255,255,0.3)",
+    fontSize: 18,
+    fontWeight: 600,
+  },
+
+  strongMatchBox: {
+    marginBottom: 30,
+    padding: 22,
+    borderRadius: 14,
+    border: "1px solid rgba(0,255,255,0.3)",
+  },
+
+  statRowInside: {
+    display: "flex",
+    justifyContent: "space-between",
+    marginBottom: 20,
+    fontSize: 18,
+    fontWeight: 600,
+  },
+
+  pieSection: {
     textAlign: "center",
   },
 
-  section: { marginBottom: 25 },
+  pieTitle: {
+    marginBottom: 12,
+    fontSize: 18,
+    color: "#00FFFF",
+    fontWeight: 600,
+  },
+
+  pieWrapper: {
+    maxWidth: 220,
+    margin: "0 auto",
+  },
+
+  section: {
+    marginBottom: 25,
+    padding: 20,
+    borderRadius: 12,
+    border: "1px solid rgba(0,255,255,0.3)",
+  },
 
   sectionTitle: {
     fontSize: 20,
-    marginBottom: 10,
+    marginBottom: 12,
+    fontWeight: 600,
   },
 
   sectionBody: {
@@ -258,6 +316,5 @@ const styles = {
     borderRadius: 12,
     fontWeight: 700,
     cursor: "pointer",
-    boxShadow: "0 0 18px rgba(0,255,255,0.6)",
   },
 };
